@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_enabled="false">
+        <layer-list>
+            <item>
+                <inset>
+                    <shape android:shape="rectangle">
+                        <solid android:color="@color/white"/>
+                        <corners android:bottomLeftRadius="24dp" android:topLeftRadius="8dp" android:topRightRadius="8dp" android:bottomRightRadius="8dp"/>
+                        <padding android:top="20dp" android:bottom="20dp"></padding>
+                    </shape>
+                </inset>
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_pressed="true">
+        <layer-list>
+            <item>
+                <inset>
+                    <shape android:shape="rectangle">
+                        <solid android:color="@color/modalBackground"/>
+                        <corners android:bottomLeftRadius="24dp" android:topLeftRadius="8dp" android:topRightRadius="8dp" android:bottomRightRadius="8dp"/>
+                        <padding android:top="20dp" android:bottom="20dp"></padding>
+                    </shape>
+                </inset>
+            </item>
+        </layer-list>
+    </item>
+    <item android:state_focused="false">
+        <layer-list>
+            <item>
+                <inset>
+                    <shape android:shape="rectangle">
+                        <solid android:color="@color/modalOutline"/>
+                        <corners android:bottomLeftRadius="24dp" android:topLeftRadius="8dp" android:topRightRadius="8dp" android:bottomRightRadius="8dp"/>
+                        <padding android:top="20dp" android:bottom="20dp"></padding>
+                    </shape>
+                </inset>
+            </item>
+        </layer-list>
+    </item>
+</selector>
