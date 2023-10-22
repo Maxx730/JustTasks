@@ -62,19 +62,9 @@
                 android:id="@+id/task_actions"
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
+                android:layout_weight="0"
                 android:gravity="right|center_vertical"
                 android:orientation="horizontal">
-
-                <ImageButton
-                    android:id="@+id/task_edit"
-                    android:layout_width="48dp"
-                    android:layout_height="match_parent"
-                    android:layout_marginRight="8dp"
-                    android:layout_weight="1"
-                    android:background="@drawable/task_item_action_button"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/edit"
-                    android:visibility="invisible" />
 
                 <ImageButton
                     android:id="@+id/task_trash"
@@ -84,6 +74,16 @@
                     android:scaleType="centerInside"
                     android:src="@drawable/trash_2"
                     android:visibility="invisible" />
+
+                <ImageButton
+                    android:id="@+id/task_details"
+                    android:layout_width="48dp"
+                    android:layout_height="match_parent"
+                    android:layout_weight="1"
+                    android:background="@drawable/task_item_action_button"
+                    android:scaleType="centerInside"
+                    android:src="@drawable/chevron_down"
+                    android:visibility="visible" />
             </LinearLayout>
 
         </LinearLayout>
@@ -98,7 +98,8 @@
             android:paddingLeft="24dp"
             android:paddingTop="16dp"
             android:paddingRight="24dp"
-            android:paddingBottom="16dp">
+            android:paddingBottom="16dp"
+            android:visibility="gone">
 
             <LinearLayout
                 android:id="@+id/edit_top_items"
@@ -157,7 +158,7 @@
             android:gravity="bottom"
             android:orientation="vertical"
             android:paddingTop="16dp"
-            android:visibility="visible">
+            android:visibility="gone">
 
             <TextView
                 android:id="@+id/delete_title"

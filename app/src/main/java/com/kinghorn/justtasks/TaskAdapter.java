@@ -3,6 +3,7 @@ package com.kinghorn.justtasks;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -20,6 +21,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.res.ResourcesCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.json.JSONArray;
@@ -35,14 +37,17 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
     private TaskListInterface TaskInterface;
     private int FocusedTask = -1;
     private int ConfirmTask = -1;
+    private static final int TASK_OPEN_SIZE = 1200;
+    private static final int TASK_CLOSE_SIZE = 170;
 
-    private ValueAnimator ConfirmAnimator;
+    private ValueAnimator TaskDetailAnimator;
 
 
     @NonNull
     @Override
     public TaskHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View _view = LayoutInflater.from(parent.getContext()).inflate(R.layout.task_list_item, parent, false);
+        Context _context = parent.getContext();
+        View _view = LayoutInflater.from(_context).inflate(R.layout.task_list_item, parent, false);
         return new TaskHolder(_view);
     }
 
@@ -55,19 +60,6 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             Date _date = new Date(_task.getString("date"));
             String[] _parts = _format.format(_date).split(",");
 
-            holder.GetTaskFrame().setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View view, MotionEvent motionEvent) {
-                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                        ConfirmTask = holder.getAdapterPosition();
-                        if (TaskInterface != null) {
-                            TaskInterface.OnTaskDeleteSelected();
-                        }
-                        return true;
-                    }
-                    return false;
-                }
-            });
             holder.GetTitle().setText(_task.getString("title"));
             holder.GetDate().setText(_parts[0] + " " + _parts[1].trim() + TaskUtils.GetDateSuffix(Integer.valueOf(_parts[1].trim())) + ", " + _parts[2]);
             holder.GetTaskCheckbox().setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -80,35 +72,33 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
                     }
                 }
             });
-
+            holder.GetTaskDetails().setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    FocusedTask = holder.getAdapterPosition();
+                    if (TaskInterface != null) {
+                        TaskInterface.OnTaskUpdate();
+                    }
+                }
+            });
             ImageButton[] _actions = holder.GetConfirmButtons();
             _actions[0].setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    CloseTaskItemConfirm(holder);
-                    ConfirmTask = -1;
+
                 }
             });
             _actions[1].setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    try {
-                        Manager.DeleteTask(_task.getInt("id"));
-                        ConfirmTask = -1;
-                        CloseTaskItemConfirm(holder);
-                    } catch (JSONException e) {
-                        throw new RuntimeException(e);
-                    }
+
                 }
             });
 
-            if (position == ConfirmTask && ConfirmAnimator == null) {
-                OpenTaskItemConfirm(holder);
+            if (holder.getAdapterPosition() == FocusedTask) {
+                holder.UpdateDetailButtons(false);
+                ToggleTaskItem(holder, true);
             }
-
-            holder.GetConfirmDelete().setVisibility(position == ConfirmTask ? View.VISIBLE : View.GONE);
-            holder.GetTaskTrash().setEnabled(position != ConfirmTask);
-            holder.GetTaskTrash().setAlpha(position == ConfirmTask ? 0.5F : 1.0F);
         } catch (JSONException e) {
             Log.d("JT", "ERROR: Error parsing Task #" + String.valueOf(position));
         }
@@ -119,18 +109,18 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
         return Tasks.length();
     }
 
-    public void OpenTaskItemConfirm(TaskHolder holder) {
-        ConfirmAnimator = ValueAnimator.ofInt(170, 540);
-        ConfirmAnimator.setDuration(250);
-        ConfirmAnimator.setInterpolator(new OvershootInterpolator());
-        ConfirmAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+    public void ToggleTaskItem(TaskHolder holder, boolean open) {
+        TaskDetailAnimator = open ? ValueAnimator.ofInt(TASK_CLOSE_SIZE, TASK_OPEN_SIZE) : ValueAnimator.ofInt(TASK_OPEN_SIZE, TASK_CLOSE_SIZE);
+        TaskDetailAnimator.setDuration(250);
+        TaskDetailAnimator.setInterpolator(new OvershootInterpolator());
+        TaskDetailAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
             @Override
             public void onAnimationUpdate(@NonNull ValueAnimator valueAnimator) {
-                holder.GetTaskFrame().getLayoutParams().height = (int) ConfirmAnimator.getAnimatedValue();
+                holder.GetTaskFrame().getLayoutParams().height = (int) TaskDetailAnimator.getAnimatedValue();
                 holder.GetTaskFrame().requestLayout();
             }
         });
-        ConfirmAnimator.addListener(new Animator.AnimatorListener() {
+        TaskDetailAnimator.addListener(new Animator.AnimatorListener() {
             @Override
             public void onAnimationStart(@NonNull Animator animator) {
 
@@ -138,7 +128,8 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
 
             @Override
             public void onAnimationEnd(@NonNull Animator animator) {
-                ConfirmAnimator = null;
+                TaskDetailAnimator = null;
+                holder.GetTaskDetailLayout().setVisibility(View.VISIBLE);
             }
 
             @Override
@@ -151,45 +142,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
 
             }
         });
-        ConfirmAnimator.start();
-    }
-
-    public void CloseTaskItemConfirm(TaskHolder holder) {
-        ConfirmAnimator = ValueAnimator.ofInt(540, 170);
-        ConfirmAnimator.setDuration(250);
-        ConfirmAnimator.setInterpolator(new AnticipateInterpolator());
-        ConfirmAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(@NonNull ValueAnimator valueAnimator) {
-                holder.GetTaskFrame().getLayoutParams().height = (int) ConfirmAnimator.getAnimatedValue();
-                holder.GetTaskFrame().requestLayout();
-            }
-        });
-        ConfirmAnimator.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(@NonNull Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(@NonNull Animator animator) {
-                ConfirmAnimator = null;
-                if (TaskInterface != null) {
-                    TaskInterface.OnTaskDeleteSelected();
-                }
-            }
-
-            @Override
-            public void onAnimationCancel(@NonNull Animator animator) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(@NonNull Animator animator) {
-
-            }
-        });
-        ConfirmAnimator.start();
+        TaskDetailAnimator.start();
     }
 
     public TaskAdapter(JSONArray tasks, StorageManager manager, TaskListInterface inter) {
@@ -200,14 +153,13 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
 
     public static class TaskHolder extends RecyclerView.ViewHolder {
         private TextView TaskTitle, TaskDate;
-        private ImageButton TaskTrash, ConfirmCancel, ConfirmConfirm;
+        private ImageButton TaskTrash, ConfirmCancel, ConfirmConfirm, TaskDetails;
         private CheckBox TaskCheckbox;
-        private LinearLayout ConfirmDelete;
+        private LinearLayout ConfirmDelete, TaskDetailsLayout;
         private FrameLayout TaskFrame;
 
         public TaskHolder(@NonNull View itemView) {
             super(itemView);
-
             TaskTitle = itemView.findViewById(R.id.task_title);
             TaskDate = itemView.findViewById(R.id.task_date);
             TaskCheckbox = itemView.findViewById(R.id.task_complete);
@@ -216,6 +168,8 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             TaskFrame = itemView.findViewById(R.id.task_list_item);
             ConfirmCancel = itemView.findViewById(R.id.item_confirm_cancel);
             ConfirmConfirm = itemView.findViewById(R.id.item_confirm_confirm);
+            TaskDetails = itemView.findViewById(R.id.task_details);
+            TaskDetailsLayout = itemView.findViewById(R.id.task_edit);
         }
 
         public TextView GetTitle() {
@@ -238,8 +192,23 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
 
         public FrameLayout GetTaskFrame(){return TaskFrame;}
 
+        public LinearLayout GetTaskDetailLayout(){
+            return TaskDetailsLayout;
+        }
+
         public ImageButton[] GetConfirmButtons() {
             return new ImageButton[] {ConfirmCancel, ConfirmConfirm};
+        }
+
+        public ImageButton GetTaskDetails() {
+            return TaskDetails;
+        }
+        public void UpdateDetailButtons(boolean down) {
+            if (down){
+                GetTaskDetails().setImageResource(R.drawable.chevron_down);
+            } else {
+                GetTaskDetails().setImageResource(R.drawable.chevron_up);
+            }
         }
     }
 }

@@ -279,7 +279,11 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
             TopAdd.setAlpha(1.0F);
             TopAdd.setEnabled(true);
         }
+    }
 
+    @Override
+    public void OnTaskUpdate() {
+        TaskRecycleList.setAdapter(this.TaskListAdapter);
     }
     /* End Overrides */
 
