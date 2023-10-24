@@ -94,6 +94,7 @@ public class StorageManager {
             _task.put("date", new Date());
             _task.put("completed", false);
             _task.put("id", _id);
+            _task.put("priority", false);
 
             _tasks.getJSONArray("list").put(_task);
             SaveTaskList(_tasks);

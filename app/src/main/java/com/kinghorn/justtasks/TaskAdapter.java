@@ -4,7 +4,11 @@ import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
@@ -14,6 +18,7 @@ import android.view.animation.AnticipateInterpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
@@ -35,12 +40,19 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
     private JSONArray Tasks;
     private StorageManager Manager;
     private TaskListInterface TaskInterface;
-    private int FocusedTask = -1;
     private int ConfirmTask = -1;
     private static final int TASK_OPEN_SIZE = 1200;
     private static final int TASK_CLOSE_SIZE = 170;
-
     private ValueAnimator TaskDetailAnimator;
+    private Context TaskContext;
+
+    private static final int ACTION_SAVE = 0;
+    private static final int ACTION_DELETE = 1;
+
+
+    // Task Editing Values
+    private int FocusedTask = -1;
+    private JSONObject FocusedStartData, FocusedEndData;
 
 
     @NonNull
@@ -65,11 +77,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             holder.GetTaskCheckbox().setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
-                    if (b) {
 
-                    } else {
-
-                    }
                 }
             });
             holder.GetTaskDetails().setOnClickListener(new View.OnClickListener() {
@@ -81,23 +89,10 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
                     }
                 }
             });
-            ImageButton[] _actions = holder.GetConfirmButtons();
-            _actions[0].setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-
-                }
-            });
-            _actions[1].setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-
-                }
-            });
 
             if (holder.getAdapterPosition() == FocusedTask) {
                 holder.UpdateDetailButtons(false);
-                ToggleTaskItem(holder, true);
+                ToggleTaskItem(holder, true, _task);
             }
         } catch (JSONException e) {
             Log.d("JT", "ERROR: Error parsing Task #" + String.valueOf(position));
@@ -109,54 +104,97 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
         return Tasks.length();
     }
 
-    public void ToggleTaskItem(TaskHolder holder, boolean open) {
-        TaskDetailAnimator = open ? ValueAnimator.ofInt(TASK_CLOSE_SIZE, TASK_OPEN_SIZE) : ValueAnimator.ofInt(TASK_OPEN_SIZE, TASK_CLOSE_SIZE);
-        TaskDetailAnimator.setDuration(250);
-        TaskDetailAnimator.setInterpolator(new OvershootInterpolator());
-        TaskDetailAnimator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(@NonNull ValueAnimator valueAnimator) {
-                holder.GetTaskFrame().getLayoutParams().height = (int) TaskDetailAnimator.getAnimatedValue();
-                holder.GetTaskFrame().requestLayout();
-            }
-        });
-        TaskDetailAnimator.addListener(new Animator.AnimatorListener() {
-            @Override
-            public void onAnimationStart(@NonNull Animator animator) {
+    public void ToggleTaskItem(TaskHolder holder, boolean open, JSONObject _task) {
+        int _convertedHeight = TaskUtils.ConvertDPtoPixel(400, TaskContext);
+        int _convertedMargin = TaskUtils.ConvertDPtoPixel(8, TaskContext);
+        FrameLayout.LayoutParams _params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        _params.topMargin = _convertedMargin;
 
-            }
+        EditText[] _edits = holder.GetTaskEditFields();
+        ImageButton[] _actions = holder.GetConfirmButtons();
 
-            @Override
-            public void onAnimationEnd(@NonNull Animator animator) {
-                TaskDetailAnimator = null;
-                holder.GetTaskDetailLayout().setVisibility(View.VISIBLE);
-            }
+        try {
+            FocusedStartData = _task;
+            FocusedEndData = new JSONObject(_task.toString());
 
-            @Override
-            public void onAnimationCancel(@NonNull Animator animator) {
+            // Update edit fields.
+            _edits[0].setText(_task.getString("title"));
+            _edits[1].setText(_task.getString("description"));
+            _edits[0].addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
 
-            }
+                }
 
-            @Override
-            public void onAnimationRepeat(@NonNull Animator animator) {
+                @Override
+                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    try {
+                        FocusedEndData.put("title", charSequence.toString());
+                        UpdateConfirmationButtons(holder, ACTION_SAVE);
+                    } catch(JSONException e) {
 
-            }
-        });
-        TaskDetailAnimator.start();
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+
+                }
+            });
+            _edits[1].addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+                }
+
+                @Override
+                public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                    try {
+                        FocusedEndData.put("description", charSequence.toString());
+                        UpdateConfirmationButtons(holder, ACTION_SAVE);
+                    } catch(JSONException e) {
+
+                    }
+                }
+
+                @Override
+                public void afterTextChanged(Editable editable) {
+
+                }
+            });
+
+        } catch(JSONException e) {
+
+        }
+
+
+        holder.GetTaskFrame().setLayoutParams(_params);
+        holder.GetTaskDetailLayout().setVisibility(View.VISIBLE);
+        ToggleTaskConfirmation(holder, open);
     }
 
-    public TaskAdapter(JSONArray tasks, StorageManager manager, TaskListInterface inter) {
+    public void ToggleTaskConfirmation(TaskHolder holder, boolean open) {
+        holder.GetConfirmLayout().setVisibility(open ? View.VISIBLE : View.GONE);
+    }
+
+    public void UpdateConfirmationButtons(TaskHolder holder, int action_type) {
+        Log.d("JT", "Determining if save possible...");
+    }
+
+    public TaskAdapter(JSONArray tasks, StorageManager manager, TaskListInterface inter, Context context) {
         Tasks = tasks;
         Manager = manager;
         TaskInterface = inter;
+        TaskContext = context;
     }
 
     public static class TaskHolder extends RecyclerView.ViewHolder {
         private TextView TaskTitle, TaskDate;
-        private ImageButton TaskTrash, ConfirmCancel, ConfirmConfirm, TaskDetails;
+        private ImageButton TaskTrash, TaskDetails, TaskConfirm, TaskCancel;
         private CheckBox TaskCheckbox;
-        private LinearLayout ConfirmDelete, TaskDetailsLayout;
+        private LinearLayout ConfirmLayout, TaskDetailsLayout;
         private FrameLayout TaskFrame;
+        private EditText TaskEditTitle, TaskEditDescription;
 
         public TaskHolder(@NonNull View itemView) {
             super(itemView);
@@ -164,12 +202,14 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             TaskDate = itemView.findViewById(R.id.task_date);
             TaskCheckbox = itemView.findViewById(R.id.task_complete);
             TaskTrash = itemView.findViewById(R.id.task_trash);
-            ConfirmDelete = itemView.findViewById(R.id.confirm_task_delete);
+            ConfirmLayout = itemView.findViewById(R.id.task_confirm);
             TaskFrame = itemView.findViewById(R.id.task_list_item);
-            ConfirmCancel = itemView.findViewById(R.id.item_confirm_cancel);
-            ConfirmConfirm = itemView.findViewById(R.id.item_confirm_confirm);
             TaskDetails = itemView.findViewById(R.id.task_details);
             TaskDetailsLayout = itemView.findViewById(R.id.task_edit);
+            TaskEditTitle = itemView.findViewById(R.id.task_edit_title);
+            TaskEditDescription = itemView.findViewById(R.id.task_edit_description);
+            TaskConfirm = itemView.findViewById(R.id.task_confirm_check);
+            TaskCancel = itemView.findViewById(R.id.task_confirm_cancel);
         }
 
         public TextView GetTitle() {
@@ -188,7 +228,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             return TaskCheckbox;
         }
 
-        public LinearLayout GetConfirmDelete() {return ConfirmDelete;}
+        public LinearLayout GetConfirmLayout() {return ConfirmLayout;}
 
         public FrameLayout GetTaskFrame(){return TaskFrame;}
 
@@ -197,8 +237,12 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
         }
 
         public ImageButton[] GetConfirmButtons() {
-            return new ImageButton[] {ConfirmCancel, ConfirmConfirm};
+            return new ImageButton[] {TaskConfirm, TaskCancel};
         }
+        public EditText[] GetTaskEditFields() {
+            return new EditText[] {TaskEditTitle, TaskEditDescription};
+        }
+
 
         public ImageButton GetTaskDetails() {
             return TaskDetails;

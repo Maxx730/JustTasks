@@ -31,16 +31,9 @@ import android.widget.EditText;
 import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
-import android.widget.TextView;
 import android.widget.Toast;
-
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.util.Date;
-
-import kotlinx.coroutines.scheduling.Task;
 
 public class MainActivity extends AppCompatActivity implements StorageInterface, TaskListInterface {
 
@@ -380,7 +373,7 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
             this.Tasks = this.Storage.LoadTaskList();
 
             if (this.Tasks.getJSONArray("list").length() > 0) {
-                this.TaskListAdapter = new TaskAdapter(this.Tasks.getJSONArray("list"), Storage, this);
+                this.TaskListAdapter = new TaskAdapter(this.Tasks.getJSONArray("list"), Storage, this, getApplicationContext());
                 this.TaskRecycleList.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
                 this.TaskRecycleList.setAdapter(this.TaskListAdapter);
                 this.LoadingFrame.setVisibility(View.GONE);
