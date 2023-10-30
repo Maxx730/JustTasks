@@ -8,7 +8,9 @@
     <string name="search">Search</string>
     <string name="no_tasks">Uh Oh! Looks like there aren\'t any tasks saved.</string>
     <string name="delete_task_title">Delete Task?</string>
-    <string name="delete_task_description">Are you sure you want to delete this task?</string>
+    <string name="delete_task_description">Are you sure you want to delete \'{task}\' from your task list?</string>
     <string name="priority">Priority</string>
     <string name="description">Description</string>
+    <string name="modal_title_placeholder">MODAL TITLE</string>
+    <string name="modal_description_placeholder">MODAL DESCRIPTION</string>
 </resources>

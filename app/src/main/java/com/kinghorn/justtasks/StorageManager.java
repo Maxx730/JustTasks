@@ -61,7 +61,6 @@ public class StorageManager {
         }
         return _exists;
     }
-
     public JSONObject LoadTaskList() throws JSONException {
         if (this.Prefs != null) {
             return new JSONObject(this.Prefs.getString(TASK_PREF, "{list:[]}"));
@@ -74,6 +73,9 @@ public class StorageManager {
             SharedPreferences.Editor _edit = this.Prefs.edit();
             _edit.putString(TASK_PREF, tasks.toString());
             _edit.apply();
+            if (Interface != null) {
+                Interface.OnTaskSaved();
+            }
         } else {
             Log.d("JT", "ERROR: Unable to save tasks, preferences object does not exist.");
         }
@@ -122,5 +124,32 @@ public class StorageManager {
         } catch(JSONException e) {
             Log.e("JT", "ERROR: Error deleting task with id:" + String.valueOf(id));
         }
+    }
+
+    public void UpdateTask(JSONObject update) throws JSONException {
+        JSONArray _tasks = LoadTaskList().getJSONArray("list");
+        for (int i = 0; i < _tasks.length();i++) {
+            JSONObject _task = _tasks.getJSONObject(i);
+            if (_task.getInt("id") == update.getInt("id")) {
+                _tasks.put(i, new JSONObject(update.toString()));
+            }
+        }
+        JSONObject _save = new JSONObject();
+        _save.put("list", _tasks);
+        SaveTaskList(_save);
+    }
+
+    public JSONObject LoadTask(int id) throws JSONException {
+        JSONObject _task = new JSONObject("{error:\"task not found\"}");
+        JSONArray _tasks = LoadTaskList().getJSONArray("list");
+
+        for(int i = 0;i < _tasks.length();i++) {
+            JSONObject _check = _tasks.getJSONObject(i);
+            if (_check.getInt("id") == id) {
+                _task = _check;
+            }
+        }
+
+        return _task;
     }
 }

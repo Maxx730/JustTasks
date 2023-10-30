@@ -16,11 +16,10 @@ import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
-import android.view.KeyEvent;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.view.animation.AccelerateInterpolator;
 import android.view.animation.Animation;
 import android.view.animation.AnimationUtils;
 import android.view.animation.AnticipateInterpolator;
@@ -35,6 +34,8 @@ import android.widget.Toast;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.logging.Level;
+
 public class MainActivity extends AppCompatActivity implements StorageInterface, TaskListInterface {
 
     private StorageManager Storage;
@@ -42,10 +43,13 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
     private ImageButton ActionLeft, ActionRight, TopAdd, TopSettings, ClearSearch;
     private EditText TaskTitle, TaskDescription, TopSearch;
     private Animation YScaleIn, YScaleOut, FadeIn, FadeOut, ClearButtonOut, SlideRight;
-    private FrameLayout ModalFrame, ModalShade, LoadingFrame;
-    private LinearLayout ActionsLayout, TaskListLayout, EmptyLayout;
+    private FrameLayout LoadingFrame;
+    private LinearLayout ActionsLayout, TaskListLayout, EmptyLayout, DetailsFrame;
     private RecyclerView TaskRecycleList;
     private TaskAdapter TaskListAdapter;
+
+    private boolean ModalOpen = false;
+    private static final int ADD_TASK = 0, TASK_DETAILS = 1;
 
     /* Overrides */
     @SuppressLint("MissingInflatedId")
@@ -79,12 +83,12 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
         this.LoadingFrame = (FrameLayout) findViewById(R.id.loading_frame);
         this.TaskListLayout = (LinearLayout) findViewById(R.id.tasks);
         this.TopSettings = (ImageButton) findViewById(R.id.settings_action);
+        this.DetailsFrame = (LinearLayout) findViewById(R.id.task_details);
 
         /* Top Action Listeners */
         this.TopAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                AnimateAddTask(false);
                 TopAdd.setEnabled(false);
                 TopAdd.setAlpha(0.5F);
             }
@@ -102,7 +106,6 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
         this.ActionLeft.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                AnimateAddTask(true);
                 TopAdd.setEnabled(true);
                 TopAdd.setAlpha(1.0F);
                 TaskTitle.setText(null);
@@ -162,8 +165,7 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
 
             @Override
             public void onAnimationEnd(Animation animation) {
-                ModalFrame.setVisibility(View.GONE);
-                ModalShade.setVisibility(View.GONE);
+
             }
 
             @Override
@@ -249,6 +251,7 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
 
         UpdateRightAction(false);
         LoadTaskList();
+        AnimateModals(true, ADD_TASK);
     }
 
     @Override
@@ -262,16 +265,35 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
     }
 
     @Override
-    public void OnTaskDeleteSelected() {
+    public void OnTaskFocused(TaskAdapter.TaskHolder view) {
+        if (!ModalOpen) {;
+            Log.d("JT", "working here");
+            AnimateModals(false, TASK_DETAILS);
+        }
+    }
+
+    @Override
+    public void OnTaskDeleteSelected(int id) {
         TaskRecycleList.setAdapter(this.TaskListAdapter);
 
-        LinearLayout _layout = (LinearLayout) findViewById(R.id.task_list_layout);
-        LinearLayout.LayoutParams _params = (LinearLayout.LayoutParams) _layout.getLayoutParams();
-        if (_params.weight > 0) {
-            AnimateAddTask(true);
-            TopAdd.setAlpha(1.0F);
-            TopAdd.setEnabled(true);
+        try {
+            JSONObject _task = Storage.LoadTask(id);
+            TaskModal _modal = new TaskModal(getApplicationContext(), findViewById(R.id.main_layout));
+            _modal.show(getResources().getString(R.string.delete_task_title), getResources().getString(R.string.delete_task_description).replace("{task}", _task.getString("title")), new ModalInterface() {
+                @Override
+                public void OnCancel() {
+
+                }
+
+                @Override
+                public void OnConfirm() {
+                    Storage.DeleteTask(id);
+                }
+            });
+        } catch (JSONException e) {
+            Toast.makeText(getApplicationContext(), "ERROR: Unable to find given task.", Toast.LENGTH_LONG).show();
         }
+
     }
 
     @Override
@@ -284,6 +306,7 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
         return this.TaskTitle.getText().length() > 0;
     }
 
+    /* KEYBOARD ACTIONS */
     private void HideKeyboard(View view) {
         InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
         imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
@@ -292,6 +315,7 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
     private void ShowKeyboard(View view) {
         this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
     }
+    /* END KEYBOARD ACTIONS */
 
     private void AnimateSearchBar(boolean in) {
         LinearLayout _search = (LinearLayout) findViewById(R.id.searchbox);
@@ -328,34 +352,6 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
         });
         _weight.start();
     }
-    private void AnimateAddTask(boolean in) {
-        LinearLayout _add = (LinearLayout) findViewById(R.id.add_task_modal);
-        LinearLayout _layout = (LinearLayout) findViewById(R.id.task_list_layout);
-        ValueAnimator _weight;
-        if (in) {
-            _weight = ValueAnimator.ofFloat(1.0f, 0.0f);
-        } else {
-            _weight = ValueAnimator.ofFloat(0.0f, 1.0f);
-        }
-        _weight.setDuration(in ? 550 : 250);
-        _weight.setInterpolator(in ? new AnticipateInterpolator() : new OvershootInterpolator());
-        _weight.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                ((LinearLayout.LayoutParams) _layout.getLayoutParams()).weight = (float) animation.getAnimatedValue();
-                _layout.requestLayout();
-                _add.setAlpha((float) animation.getAnimatedValue());
-            }
-
-        });
-        _weight.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-
-            }
-        });
-        _weight.start();
-    }
 
     private void UpdateRightAction(boolean _enabled) {
         ImageButton _button = (ImageButton) findViewById(R.id.confirm_add);
@@ -367,6 +363,46 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
         _button.setAlpha(0.5F);
     }
 
+    private void AnimateModals(boolean in, int type) {
+        LinearLayout _action = (LinearLayout) findViewById(R.id.task_list_layout);
+        ValueAnimator _anim = ValueAnimator.ofFloat(in ? 1.0F : 0.0F, in ? 0.0F : 1.0F);
+        findViewById(R.id.add_task_modal).setVisibility(View.GONE);
+        findViewById(R.id.task_details).setVisibility(View.GONE);
+
+        _anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(@NonNull ValueAnimator valueAnimator) {
+                LinearLayout.LayoutParams _params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
+                _params.weight = (float) valueAnimator.getAnimatedValue();
+                _action.setLayoutParams(_params);
+            }
+        });
+        _anim.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                super.onAnimationEnd(animation);
+                ShowModalType(type);
+            }
+        });
+
+        _anim.setInterpolator(new OvershootInterpolator());
+        _anim.setDuration(550);
+        _anim.start();
+    }
+
+    private void ShowModalType(int type) {
+        switch (type) {
+            case MainActivity.ADD_TASK:
+                findViewById(R.id.add_task_modal).setVisibility(View.VISIBLE);
+                break;
+            case MainActivity.TASK_DETAILS:
+                findViewById(R.id.task_details).setVisibility(View.VISIBLE);
+                break;
+        }
+    }
+
+
+    /* TASK ACTIONS */
     private void LoadTaskList() {
         try {
 
@@ -378,7 +414,7 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
                 this.TaskRecycleList.setAdapter(this.TaskListAdapter);
                 this.LoadingFrame.setVisibility(View.GONE);
                 this.TaskListLayout.setVisibility(View.VISIBLE);
-
+                EmptyLayout.setVisibility(View.GONE);
                 this.TaskRecycleList.getRecycledViewPool().clear();
             } else {
                 EmptyLayout.setVisibility(View.VISIBLE);
@@ -397,7 +433,7 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
         this.LoadingFrame.setVisibility(View.VISIBLE);
 
         if (((LinearLayout.LayoutParams) findViewById(R.id.task_list_layout).getLayoutParams()).weight == 1.0) {
-            this.AnimateAddTask(true);
+
             this.HideKeyboard(findViewById(R.id.main_content));
             TaskTitle.setText(null);
             TaskDescription.setText(null);
@@ -406,4 +442,5 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
         }
         LoadTaskList();
     }
+    /* END TASK ACTIONS */
 }

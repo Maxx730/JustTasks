@@ -40,10 +40,10 @@ public class TaskUtils {
             while(keys.hasNext()) {
                 String key = keys.next();
                 if (original.has(key)) {
-                    Log.d("JT", original.toString());
-                    Log.d("JT", updated.toString());
                     _has_changes = !original.get(key).equals(updated.get(key));
-                    Log.d("JT", String.valueOf(_has_changes));
+                    if (_has_changes) {
+                        break;
+                    }
                 } else {
                     _has_changes = true;
                 }

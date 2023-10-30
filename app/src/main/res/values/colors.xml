@@ -23,4 +23,8 @@
     <color name="itemActionPressed">#4a4a4a</color>
 
     <color name="editTaskInputNormal">#272727</color>
+
+    <color name="modalFrame">#232323</color>
+    <color name="priorityYellow">#534e36</color>
+    <color name="saveGreen">#3d5d34</color>
 </resources>

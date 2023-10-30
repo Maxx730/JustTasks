@@ -71,7 +71,10 @@
                     android:id="@+id/task_trash"
                     android:layout_width="48dp"
                     android:layout_height="match_parent"
+                    android:layout_marginRight="8dp"
                     android:background="@drawable/task_item_action_button"
+                    android:backgroundTint="#3A2525"
+                    android:foregroundTintMode="add"
                     android:scaleType="centerInside"
                     android:src="@drawable/trash_2"
                     android:visibility="invisible" />
@@ -110,7 +113,7 @@
                     android:id="@+id/task_edit_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginRight="4dp"
+                    android:layout_marginRight="8dp"
                     android:layout_weight="1"
                     android:background="@drawable/edit_task_title"
                     android:ems="10"
@@ -120,11 +123,14 @@
                     android:paddingRight="24dp"
                     android:paddingBottom="12dp" />
 
-                <Switch
-                    android:id="@+id/priority_switch"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginLeft="8dp" />
+                <ToggleButton
+                    android:id="@+id/toggleButton"
+                    android:layout_width="48dp"
+                    android:layout_height="match_parent"
+                    android:background="@drawable/priority_toggle_button"
+                    android:text="ToggleButton"
+                    android:textOff=" "
+                    android:textOn=" " />
 
             </LinearLayout>
 
@@ -156,33 +162,31 @@
         </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/task_delete"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="0"
+            android:orientation="vertical"></LinearLayout>
+
+        <LinearLayout
             android:id="@+id/task_confirm"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@drawable/confirm_delete_divider"
             android:orientation="horizontal"
-            android:paddingLeft="16dp"
-            android:paddingRight="16dp"
-            android:paddingBottom="16dp"
+            android:paddingLeft="8dp"
+            android:paddingTop="10dp"
+            android:paddingRight="8dp"
+            android:paddingBottom="8dp"
             android:visibility="gone">
 
             <ImageButton
-                android:id="@+id/task_confirm_cancel"
-                android:layout_width="wrap_content"
+                android:id="@+id/task_save"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="4dp"
                 android:layout_weight="1"
-                android:background="@drawable/list_item_left"
-                android:paddingTop="10dp"
-                android:paddingBottom="10dp"
-                android:src="@drawable/x" />
-
-            <ImageButton
-                android:id="@+id/task_confirm_check"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginLeft="4dp"
-                android:layout_weight="1"
-                android:background="@drawable/list_item_right"
+                android:alpha="0.5"
+                android:background="@drawable/task_save_button"
                 android:paddingTop="10dp"
                 android:paddingBottom="10dp"
                 android:src="@drawable/check" />

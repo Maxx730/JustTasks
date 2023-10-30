@@ -1,21 +1,14 @@
 package com.kinghorn.justtasks;
 
-import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.LayoutInflater;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.AnticipateInterpolator;
-import android.view.animation.OvershootInterpolator;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -26,7 +19,6 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
-import androidx.core.content.res.ResourcesCompat;
 import androidx.recyclerview.widget.RecyclerView;
 
 import org.json.JSONArray;
@@ -74,10 +66,16 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
 
             holder.GetTitle().setText(_task.getString("title"));
             holder.GetDate().setText(_parts[0] + " " + _parts[1].trim() + TaskUtils.GetDateSuffix(Integer.valueOf(_parts[1].trim())) + ", " + _parts[2]);
+            holder.GetTaskCheckbox().setChecked(_task.getBoolean("completed"));
             holder.GetTaskCheckbox().setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                    try {
+                        _task.put("completed", b);
+                        Manager.UpdateTask(_task);
+                    } catch (JSONException e) {
 
+                    }
                 }
             });
             holder.GetTaskDetails().setOnClickListener(new View.OnClickListener() {
@@ -86,13 +84,14 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
                     FocusedTask = holder.getAdapterPosition();
                     if (TaskInterface != null) {
                         TaskInterface.OnTaskUpdate();
+                        TaskInterface.OnTaskFocused(holder);
                     }
                 }
             });
 
+
             if (holder.getAdapterPosition() == FocusedTask) {
-                holder.UpdateDetailButtons(false);
-                ToggleTaskItem(holder, true, _task);
+
             }
         } catch (JSONException e) {
             Log.d("JT", "ERROR: Error parsing Task #" + String.valueOf(position));
@@ -111,7 +110,6 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
         _params.topMargin = _convertedMargin;
 
         EditText[] _edits = holder.GetTaskEditFields();
-        ImageButton[] _actions = holder.GetConfirmButtons();
 
         try {
             FocusedStartData = _task;
@@ -164,13 +162,33 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             });
 
         } catch(JSONException e) {
-
+            Toast.makeText(TaskContext, "ERROR: Error opening task.", Toast.LENGTH_LONG).show();
         }
 
+        holder.GetTaskTrash().setVisibility(View.VISIBLE);
+        holder.GetTaskTrash().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(TaskInterface != null) {
+                    try {
+                        TaskInterface.OnTaskDeleteSelected(_task.getInt("id"));
+                    } catch (JSONException e) {
 
+                    }
+                }
+            }
+        });
+
+        holder.GetTaskDetails().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                FocusedTask = -1;
+                TaskInterface.OnTaskUpdate();
+            }
+        });
         holder.GetTaskFrame().setLayoutParams(_params);
         holder.GetTaskDetailLayout().setVisibility(View.VISIBLE);
-        ToggleTaskConfirmation(holder, open);
+        ToggleTaskConfirmation(holder, true);
     }
 
     public void ToggleTaskConfirmation(TaskHolder holder, boolean open) {
@@ -178,7 +196,18 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
     }
 
     public void UpdateConfirmationButtons(TaskHolder holder, int action_type) {
-        Log.d("JT", "Determining if save possible...");
+        boolean _changed = TaskUtils.HasChanges(FocusedStartData, FocusedEndData);
+        holder.GetTaskSave().setEnabled(_changed);
+        holder.GetTaskSave().setAlpha(_changed ? 1.0F : 0.5F);
+
+        if (_changed) {
+            holder.GetTaskSave().setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    
+                }
+            });
+        }
     }
 
     public TaskAdapter(JSONArray tasks, StorageManager manager, TaskListInterface inter, Context context) {
@@ -188,9 +217,13 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
         TaskContext = context;
     }
 
+    private void ShrinkTask(TaskHolder holder) {
+
+    }
+
     public static class TaskHolder extends RecyclerView.ViewHolder {
         private TextView TaskTitle, TaskDate;
-        private ImageButton TaskTrash, TaskDetails, TaskConfirm, TaskCancel;
+        private ImageButton TaskTrash, TaskDetails, TaskSave;
         private CheckBox TaskCheckbox;
         private LinearLayout ConfirmLayout, TaskDetailsLayout;
         private FrameLayout TaskFrame;
@@ -208,8 +241,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             TaskDetailsLayout = itemView.findViewById(R.id.task_edit);
             TaskEditTitle = itemView.findViewById(R.id.task_edit_title);
             TaskEditDescription = itemView.findViewById(R.id.task_edit_description);
-            TaskConfirm = itemView.findViewById(R.id.task_confirm_check);
-            TaskCancel = itemView.findViewById(R.id.task_confirm_cancel);
+            TaskSave = itemView.findViewById(R.id.task_save);
         }
 
         public TextView GetTitle() {
@@ -236,13 +268,13 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             return TaskDetailsLayout;
         }
 
-        public ImageButton[] GetConfirmButtons() {
-            return new ImageButton[] {TaskConfirm, TaskCancel};
-        }
         public EditText[] GetTaskEditFields() {
             return new EditText[] {TaskEditTitle, TaskEditDescription};
         }
 
+        public ImageButton GetTaskSave() {
+            return TaskSave;
+        }
 
         public ImageButton GetTaskDetails() {
             return TaskDetails;
