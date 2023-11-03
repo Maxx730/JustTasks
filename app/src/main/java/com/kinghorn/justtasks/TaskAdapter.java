@@ -3,6 +3,7 @@ package com.kinghorn.justtasks;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.content.Context;
+import android.graphics.Color;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
@@ -30,12 +31,7 @@ import java.util.Date;
 
 public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
     private JSONArray Tasks;
-    private StorageManager Manager;
     private TaskListInterface TaskInterface;
-    private int ConfirmTask = -1;
-    private static final int TASK_OPEN_SIZE = 1200;
-    private static final int TASK_CLOSE_SIZE = 170;
-    private ValueAnimator TaskDetailAnimator;
     private Context TaskContext;
 
     private static final int ACTION_SAVE = 0;
@@ -60,7 +56,7 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
     public void onBindViewHolder(@NonNull TaskHolder holder, int position) {
         try {
             JSONObject _task = Tasks.getJSONObject(position);
-            SimpleDateFormat _format = new SimpleDateFormat("MMMM, dd, yyyy");
+            SimpleDateFormat _format = new SimpleDateFormat("MMMM, d, yyyy");
             Date _date = new Date(_task.getString("date"));
             String[] _parts = _format.format(_date).split(",");
 
@@ -72,26 +68,27 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
                 public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
                     try {
                         _task.put("completed", b);
-                        Manager.UpdateTask(_task);
                     } catch (JSONException e) {
 
                     }
                 }
             });
-            holder.GetTaskDetails().setOnClickListener(new View.OnClickListener() {
+            holder.GetTaskFrame().setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    FocusedTask = holder.getAdapterPosition();
-                    if (TaskInterface != null) {
-                        TaskInterface.OnTaskUpdate();
-                        TaskInterface.OnTaskFocused(holder);
+                    try {
+                        TaskInterface.OnTaskFocused(_task.getInt("id"));
+                    } catch (JSONException e) {
+
                     }
+
                 }
             });
 
 
-            if (holder.getAdapterPosition() == FocusedTask) {
-
+            if (holder.getAdapterPosition() == 0) {
+                FrameLayout.LayoutParams _params = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+                holder.GetTaskFrame().setLayoutParams(_params);
             }
         } catch (JSONException e) {
             Log.d("JT", "ERROR: Error parsing Task #" + String.valueOf(position));
@@ -178,14 +175,6 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
                 }
             }
         });
-
-        holder.GetTaskDetails().setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                FocusedTask = -1;
-                TaskInterface.OnTaskUpdate();
-            }
-        });
         holder.GetTaskFrame().setLayoutParams(_params);
         holder.GetTaskDetailLayout().setVisibility(View.VISIBLE);
         ToggleTaskConfirmation(holder, true);
@@ -210,20 +199,15 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
         }
     }
 
-    public TaskAdapter(JSONArray tasks, StorageManager manager, TaskListInterface inter, Context context) {
+    public TaskAdapter(JSONArray tasks, TaskListInterface inter, Context context) {
         Tasks = tasks;
-        Manager = manager;
         TaskInterface = inter;
         TaskContext = context;
     }
 
-    private void ShrinkTask(TaskHolder holder) {
-
-    }
-
     public static class TaskHolder extends RecyclerView.ViewHolder {
         private TextView TaskTitle, TaskDate;
-        private ImageButton TaskTrash, TaskDetails, TaskSave;
+        private ImageButton TaskTrash, TaskSave;
         private CheckBox TaskCheckbox;
         private LinearLayout ConfirmLayout, TaskDetailsLayout;
         private FrameLayout TaskFrame;
@@ -237,7 +221,6 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             TaskTrash = itemView.findViewById(R.id.task_trash);
             ConfirmLayout = itemView.findViewById(R.id.task_confirm);
             TaskFrame = itemView.findViewById(R.id.task_list_item);
-            TaskDetails = itemView.findViewById(R.id.task_details);
             TaskDetailsLayout = itemView.findViewById(R.id.task_edit);
             TaskEditTitle = itemView.findViewById(R.id.task_edit_title);
             TaskEditDescription = itemView.findViewById(R.id.task_edit_description);
@@ -276,15 +259,5 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskHolder> {
             return TaskSave;
         }
 
-        public ImageButton GetTaskDetails() {
-            return TaskDetails;
-        }
-        public void UpdateDetailButtons(boolean down) {
-            if (down){
-                GetTaskDetails().setImageResource(R.drawable.chevron_down);
-            } else {
-                GetTaskDetails().setImageResource(R.drawable.chevron_up);
-            }
-        }
     }
 }

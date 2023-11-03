@@ -152,4 +152,9 @@ public class StorageManager {
 
         return _task;
     }
+    public void ClearData() throws JSONException {
+        JSONObject _tasks = new JSONObject("{list:[]}");
+        SaveTaskList(_tasks);
+        Interface.OnTasksCleared();
+    }
 }

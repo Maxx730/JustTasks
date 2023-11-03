@@ -13,4 +13,17 @@
     <string name="description">Description</string>
     <string name="modal_title_placeholder">MODAL TITLE</string>
     <string name="modal_description_placeholder">MODAL DESCRIPTION</string>
+    <string name="loading_message">Loading...</string>
+    <string name="clear_data">Clear Data</string>
+    <string name="cancel">Cancel</string>
+    <string name="confirm">Confirm</string>
+    <string name="ok">Ok</string>
+    <string name="clear_explanation">Clears all saved tasks and data, used for development purposes.</string>
+    <string name="appwidget_text">EXAMPLE</string>
+    <string name="add_widget">Add widget</string>
+    <string name="app_widget_description">This is an app widget description</string>
+    <string name="details_title_default">TASK DETAILS TITLE</string>
+    <string name="details_description_default">TASK DETAILS DESCRIPTION</string>
+    <string name="details_date_default">TASK DETAILS DATE</string>
+    <string name="details_close">Close</string>
 </resources>

@@ -1,55 +1,43 @@
 package com.kinghorn.justtasks;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
-
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
-import android.view.animation.AccelerateInterpolator;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
-import android.view.animation.AnticipateInterpolator;
-import android.view.animation.LinearInterpolator;
-import android.view.animation.OvershootInterpolator;
-import android.view.inputmethod.InputMethodManager;
+import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.w3c.dom.Text;
 
-import java.util.logging.Level;
+import java.util.Date;
 
-public class MainActivity extends AppCompatActivity implements StorageInterface, TaskListInterface {
+public class MainActivity extends AppCompatActivity implements StorageInterface, TaskListInterface, View.OnClickListener, SliderInterface, TextWatcher, ModalInterface {
 
-    private StorageManager Storage;
-    private JSONObject Tasks;
-    private ImageButton ActionLeft, ActionRight, TopAdd, TopSettings, ClearSearch;
-    private EditText TaskTitle, TaskDescription, TopSearch;
-    private Animation YScaleIn, YScaleOut, FadeIn, FadeOut, ClearButtonOut, SlideRight;
-    private FrameLayout LoadingFrame;
-    private LinearLayout ActionsLayout, TaskListLayout, EmptyLayout, DetailsFrame;
-    private RecyclerView TaskRecycleList;
-    private TaskAdapter TaskListAdapter;
-
-    private boolean ModalOpen = false;
+    private JSONArray TaskList;
+    private StorageManager TaskStorage;
+    private SliderView SlideView;
+    private AddTask AddView;
+    private DetailView DetView;
+    private BusySpinner BusyView;
     private static final int ADD_TASK = 0, TASK_DETAILS = 1;
+
+    private int ModalContext;
 
     /* Overrides */
     @SuppressLint("MissingInflatedId")
@@ -61,202 +49,28 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
         getWindow().setStatusBarColor(Color.BLACK);
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN);
 
-        this.YScaleIn = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.modal_in);
-        this.YScaleOut = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.modal_out);
-        this.FadeIn = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.shade_in);
-        this.SlideRight = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.slide_right);
-        this.FadeOut = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_out);
-        this.ClearButtonOut = AnimationUtils.loadAnimation(getApplicationContext(), R.anim.fade_out);
+        TaskStorage = new StorageManager(getApplicationContext(), this);
+        SlideView = (SliderView) findViewById(R.id.slide_view);
 
-        this.Storage = new StorageManager(getApplicationContext(), this);
-        this.TopSearch = (EditText) findViewById(R.id.search_text);
-        this.ActionsLayout = (LinearLayout) findViewById(R.id.top_actions);
-        this.ClearSearch = (ImageButton) findViewById(R.id.clear_search);
-        this.TopAdd = (ImageButton) findViewById(R.id.add_action);
-        this.ActionLeft = (ImageButton) findViewById(R.id.cancel_add);
-        this.ActionRight = (ImageButton) findViewById(R.id.confirm_add);
-        this.TaskTitle = (EditText) findViewById(R.id.new_task_title);
-        this.TaskDescription = (EditText) findViewById(R.id.new_task_description);
-        this.TaskListLayout = (LinearLayout) findViewById(R.id.task_list_layout);
-        this.TaskRecycleList = (RecyclerView) findViewById(R.id.task_recycler);
-        this.EmptyLayout = (LinearLayout) findViewById(R.id.empty_notice);
-        this.LoadingFrame = (FrameLayout) findViewById(R.id.loading_frame);
-        this.TaskListLayout = (LinearLayout) findViewById(R.id.tasks);
-        this.TopSettings = (ImageButton) findViewById(R.id.settings_action);
-        this.DetailsFrame = (LinearLayout) findViewById(R.id.task_details);
+        AddView = (AddTask) getLayoutInflater().inflate(R.layout.modal_add, null, false);
+        DetView = (DetailView) getLayoutInflater().inflate(R.layout.modal_details, null, false);
+        ImageButton _add = (ImageButton) findViewById(R.id.add_action);
+        _add.setOnClickListener(this);
 
-        /* Top Action Listeners */
-        this.TopAdd.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                TopAdd.setEnabled(false);
-                TopAdd.setAlpha(0.5F);
-            }
-        });
-        this.TopSettings.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Intent _intent = new Intent(getApplicationContext(), SettingsActivity.class);
-                startActivity(_intent);
-            }
-        });
-        /* End Top Action Listeners */
+        ImageButton _settings = (ImageButton) findViewById(R.id.settings_action);
+        _settings.setOnClickListener(this);
 
-        /* Add Task Listeners */
-        this.ActionLeft.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                TopAdd.setEnabled(true);
-                TopAdd.setAlpha(1.0F);
-                TaskTitle.setText(null);
-                TaskDescription.setText(null);
-                HideKeyboard(findViewById(R.id.main_content));
-            }
-        });
-        this.ActionRight.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Storage.AddNewTask(String.valueOf(TaskTitle.getText()), String.valueOf(TaskDescription.getText()));
-            }
-        });
-        this.TaskTitle.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                boolean _can = CanAddTask();
-                UpdateRightAction(_can);
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
-        /* End Add Task Listeners */
-
-
-        /* Animation Listeners */
-        this.YScaleIn.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
-
-        this.YScaleOut.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
-
-        this.FadeIn.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
-
-        this.ClearButtonOut.setAnimationListener(new Animation.AnimationListener() {
-            @Override
-            public void onAnimationStart(Animation animation) {
-
-            }
-
-            @Override
-            public void onAnimationEnd(Animation animation) {
-                ClearSearch.setVisibility(View.GONE);
-            }
-
-            @Override
-            public void onAnimationRepeat(Animation animation) {
-
-            }
-        });
-        /* End Animation Listeners */
-
-        /* Search Listeners */
-        this.TopSearch.setOnFocusChangeListener(new View.OnFocusChangeListener() {
-            @Override
-            public void onFocusChange(View view, boolean b) {
-                if (b) {
-                    ActionsLayout.startAnimation(FadeIn);
-                    ClearSearch.setVisibility(View.VISIBLE);
-                    AnimateSearchBar(false);
-                }
-            }
-        });
-
-        this.TopSearch.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-        });
-
-        this.ClearSearch.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                TopSearch.setText(null);
-                TopSearch.clearFocus();
-                HideKeyboard(view);
-                AnimateSearchBar(true);
-            }
-        });
-        /* End Search Listeners */
-
-        UpdateRightAction(false);
         LoadTaskList();
-        AnimateModals(true, ADD_TASK);
+        BusyView = (BusySpinner) findViewById(R.id.busy);
+        BusyView.setMessage("Loading Tasks...");
+        BusyView.show();
     }
 
     @Override
     public void OnTaskSaved() {
-        ReloadTasks();
+        BusyView.hide();
+        SlideView.close(this);
+        LoadTaskList();
     }
 
     @Override
@@ -265,182 +79,185 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
     }
 
     @Override
-    public void OnTaskFocused(TaskAdapter.TaskHolder view) {
-        if (!ModalOpen) {;
-            Log.d("JT", "working here");
-            AnimateModals(false, TASK_DETAILS);
+    public void OnTasksCleared() {
+
+    }
+
+    @Override
+    public void OnTaskFocused(int id) {
+        try {
+            JSONObject _task = TaskStorage.LoadTask(id);
+            ImageButton _cancel = (ImageButton) DetView.findViewById(R.id.add_cancel);
+            _cancel.setOnClickListener(this);
+            LinearLayout.LayoutParams _params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+            DetView.setLayoutParams(_params);
+
+            Button _close = (Button) DetView.findViewById(R.id.close_details);
+            _close.setOnClickListener(this);
+            ImageButton _delete = (ImageButton) DetView.findViewById(R.id.details_delete);
+            _delete.setOnClickListener(this);
+            CheckBox _box = (CheckBox) DetView.findViewById(R.id.task_complete);
+            _box.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton compoundButton, boolean b) {
+                    try {
+                        _task.put("completed", b);
+                    } catch (JSONException e) {
+
+                    }
+                }
+            });
+
+            Date _d = new Date(_task.getString("date"));
+
+            TextView _title = (TextView) DetView.findViewById(R.id.details_title);
+            TextView _desc = (TextView) DetView.findViewById(R.id.details_description);
+            TextView _date = (TextView) DetView.findViewById(R.id.details_date);
+
+            _title.setText(_task.getString("title"));
+            _desc.setText(_task.getString("description"));
+            _date.setText(TaskUtils.FormatDate(_d.getTime()));
+
+            SlideView.open(this, DetView);
+        } catch (JSONException e) {
+            Log.d("JT", e.toString());
+            Toast.makeText(getApplicationContext(), "ERROR: Unable to open task with id " + String.valueOf(id), Toast.LENGTH_SHORT).show();
         }
     }
 
     @Override
     public void OnTaskDeleteSelected(int id) {
-        TaskRecycleList.setAdapter(this.TaskListAdapter);
-
-        try {
-            JSONObject _task = Storage.LoadTask(id);
-            TaskModal _modal = new TaskModal(getApplicationContext(), findViewById(R.id.main_layout));
-            _modal.show(getResources().getString(R.string.delete_task_title), getResources().getString(R.string.delete_task_description).replace("{task}", _task.getString("title")), new ModalInterface() {
-                @Override
-                public void OnCancel() {
-
-                }
-
-                @Override
-                public void OnConfirm() {
-                    Storage.DeleteTask(id);
-                }
-            });
-        } catch (JSONException e) {
-            Toast.makeText(getApplicationContext(), "ERROR: Unable to find given task.", Toast.LENGTH_LONG).show();
-        }
 
     }
 
     @Override
-    public void OnTaskUpdate() {
-        TaskRecycleList.setAdapter(this.TaskListAdapter);
+    public void OnTaskUpdate(int id) {
     }
     /* End Overrides */
-
-    private boolean CanAddTask() {
-        return this.TaskTitle.getText().length() > 0;
-    }
-
-    /* KEYBOARD ACTIONS */
-    private void HideKeyboard(View view) {
-        InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-        imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
-    }
-
-    private void ShowKeyboard(View view) {
-        this.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-    }
-    /* END KEYBOARD ACTIONS */
-
-    private void AnimateSearchBar(boolean in) {
-        LinearLayout _search = (LinearLayout) findViewById(R.id.searchbox);
-        LinearLayout _actions = (LinearLayout) findViewById(R.id.top_actions);
-        _actions.setAlpha(0.0F);
-        ValueAnimator _weight;
-        if (in) {
-            _weight = ValueAnimator.ofFloat(20.0f, 0.0f);
-        } else {
-            _weight = ValueAnimator.ofFloat(0.0f, 20.0f);
-        }
-        _weight.setDuration(250);
-        _weight.setInterpolator(new LinearInterpolator());
-        _weight.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(ValueAnimator animation) {
-                ((LinearLayout.LayoutParams) _actions.getLayoutParams()).weight = (float) animation.getAnimatedValue();
-                _actions.requestLayout();
-            }
-
-        });
-        _weight.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                if (in) {
-                    _actions.setAlpha(1.0F);
-                    _actions.startAnimation(FadeIn);
-                    ClearSearch.startAnimation(ClearButtonOut);
-                    ClearButtonOut.start();
-                    FadeIn.setDuration(500);
-                    FadeIn.start();
-                }
-            }
-        });
-        _weight.start();
-    }
-
-    private void UpdateRightAction(boolean _enabled) {
-        ImageButton _button = (ImageButton) findViewById(R.id.confirm_add);
-        _button.setEnabled(_enabled);
-        if (_enabled) {
-            _button.setAlpha(1.0F);
-            return;
-        }
-        _button.setAlpha(0.5F);
-    }
-
-    private void AnimateModals(boolean in, int type) {
-        LinearLayout _action = (LinearLayout) findViewById(R.id.task_list_layout);
-        ValueAnimator _anim = ValueAnimator.ofFloat(in ? 1.0F : 0.0F, in ? 0.0F : 1.0F);
-        findViewById(R.id.add_task_modal).setVisibility(View.GONE);
-        findViewById(R.id.task_details).setVisibility(View.GONE);
-
-        _anim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
-            @Override
-            public void onAnimationUpdate(@NonNull ValueAnimator valueAnimator) {
-                LinearLayout.LayoutParams _params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT);
-                _params.weight = (float) valueAnimator.getAnimatedValue();
-                _action.setLayoutParams(_params);
-            }
-        });
-        _anim.addListener(new AnimatorListenerAdapter() {
-            @Override
-            public void onAnimationEnd(Animator animation) {
-                super.onAnimationEnd(animation);
-                ShowModalType(type);
-            }
-        });
-
-        _anim.setInterpolator(new OvershootInterpolator());
-        _anim.setDuration(550);
-        _anim.start();
-    }
-
-    private void ShowModalType(int type) {
-        switch (type) {
-            case MainActivity.ADD_TASK:
-                findViewById(R.id.add_task_modal).setVisibility(View.VISIBLE);
-                break;
-            case MainActivity.TASK_DETAILS:
-                findViewById(R.id.task_details).setVisibility(View.VISIBLE);
-                break;
-        }
-    }
 
 
     /* TASK ACTIONS */
     private void LoadTaskList() {
         try {
-
-            this.Tasks = this.Storage.LoadTaskList();
-
-            if (this.Tasks.getJSONArray("list").length() > 0) {
-                this.TaskListAdapter = new TaskAdapter(this.Tasks.getJSONArray("list"), Storage, this, getApplicationContext());
-                this.TaskRecycleList.setLayoutManager(new LinearLayoutManager(getApplicationContext()));
-                this.TaskRecycleList.setAdapter(this.TaskListAdapter);
-                this.LoadingFrame.setVisibility(View.GONE);
-                this.TaskListLayout.setVisibility(View.VISIBLE);
-                EmptyLayout.setVisibility(View.GONE);
-                this.TaskRecycleList.getRecycledViewPool().clear();
-            } else {
-                EmptyLayout.setVisibility(View.VISIBLE);
-                this.LoadingFrame.setVisibility(View.GONE);
-                this.TaskListLayout.setVisibility(View.GONE);
-            }
-
-
-        } catch (JSONException e) {
-            Toast.makeText(getApplicationContext(), "ERROR: Task list unable to load.", Toast.LENGTH_LONG).show();
+            TaskList = TaskStorage.LoadTaskList().getJSONArray("list");
+            SlideView.updateTaskList(TaskList, getApplicationContext(), this);
+            Handler _handle = new Handler();
+            _handle.postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    BusyView.hide();
+                    if(TaskList.length() > 0) {
+                        SlideView.showList();
+                    }
+                }
+            }, 1000);
+        } catch(JSONException e) {
+            Toast.makeText(getApplicationContext(), "ERROR: Unable to load task list.", Toast.LENGTH_SHORT).show();
         }
     }
 
     private void ReloadTasks() {
-        this.TaskListLayout.setVisibility(View.GONE);
-        this.LoadingFrame.setVisibility(View.VISIBLE);
 
-        if (((LinearLayout.LayoutParams) findViewById(R.id.task_list_layout).getLayoutParams()).weight == 1.0) {
+    }
 
-            this.HideKeyboard(findViewById(R.id.main_content));
-            TaskTitle.setText(null);
-            TaskDescription.setText(null);
-            this.TopAdd.setEnabled(true);
-            this.TopAdd.setAlpha(1.0F);
+    @Override
+    public void onClick(View view) {
+       if (view.getId() == R.id.add_action) {
+           ImageButton _cancel = AddView.findViewById(R.id.add_cancel);
+           ImageButton _confirm = AddView.findViewById(R.id.add_confirm);
+           EditText _title = AddView.findViewById(R.id.add_title);
+
+           _title.addTextChangedListener(this);
+           _cancel.setOnClickListener(this);
+           _confirm.setOnClickListener(this);
+
+           LinearLayout.LayoutParams _params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+           AddView.setLayoutParams(_params);
+           ModalContext = ADD_TASK;
+           SlideView.open(this, AddView);
+       }
+
+       if(view.getId() == R.id.add_cancel) {
+           EditText _title = AddView.findViewById(R.id.add_title);
+           EditText _desc = AddView.findViewById(R.id.add_desc);
+           _title.setText(null);
+           _desc.setText(null);
+           SlideView.close(this);
+       }
+
+       if (view.getId() == R.id.add_confirm) {
+           EditText _title = AddView.findViewById(R.id.add_title);
+           EditText _desc = AddView.findViewById(R.id.add_desc);
+            BusyView.setMessage("Adding new task...");
+            BusyView.show();
+            TaskStorage.AddNewTask(String.valueOf(_title.getText()), String.valueOf(_desc.getText()));
+           _title.setText(null);
+           _desc.setText(null);
+       }
+
+       if (view.getId() == R.id.settings_action) {
+           Intent _intent = new Intent(this, SettingsActivity.class);
+           startActivity(_intent);
+       }
+
+       if(view.getId() == R.id.close_details) {
+           SlideView.close(this);
+       }
+
+       if(view.getId() == R.id.details_delete) {
+           TaskModal _modal = new TaskModal(getApplicationContext(), findViewById(R.id.main_layout));
+           _modal.show("Delete Task?", "Are you sure you want to delete this task? This will erase the task and cannot be undone.", this);
+       }
+    }
+
+    @Override
+    public void OnSliderOpened() {
+        switch (ModalContext) {
+            case ADD_TASK:
+                ImageButton _add = (ImageButton) findViewById(R.id.add_action);
+                _add.setEnabled(false);
+                _add.setAlpha(0.5F);
         }
-        LoadTaskList();
+    }
+
+    @Override
+    public void OnSliderClosed() {
+        ImageButton _add = (ImageButton) findViewById(R.id.add_action);
+        _add.setEnabled(true);
+        _add.setAlpha(1.0F);
+
+        ModalContext = -1;
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+    }
+
+    @Override
+    public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+        EditText _title = AddView.findViewById(R.id.add_title);
+        EditText _desc = AddView.findViewById(R.id.add_desc);
+        ImageButton _confirm = AddView.findViewById(R.id.add_confirm);
+
+        boolean _allowed = _title.getText().toString().trim().length() > 0;
+        _confirm.setAlpha(_allowed ? 1.0F : 0.5F);
+        _confirm.setEnabled(_allowed);
+    }
+
+    @Override
+    public void afterTextChanged(Editable editable) {
+
+    }
+
+    @Override
+    public void OnCancel() {
+
+    }
+
+    @Override
+    public void OnConfirm() {
+
     }
     /* END TASK ACTIONS */
 }

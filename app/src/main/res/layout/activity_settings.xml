@@ -15,46 +15,73 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <TextView
-            android:id="@+id/setting_title"
+        <LinearLayout
+            android:id="@+id/top"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/settings_title"
-            android:textColor="@color/searchBarFocused"
-            android:textSize="24sp"
-            android:textStyle="bold" />
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/back"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:layout_gravity="center_vertical"
+                android:layout_marginRight="4dp"
+                android:background="@drawable/top_action"
+                android:foregroundGravity="center_vertical"
+                android:src="@drawable/arrow_left" />
+
+            <TextView
+                android:id="@+id/setting_title"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginLeft="4dp"
+                android:background="@drawable/top_action_left"
+                android:gravity="center_vertical"
+                android:paddingLeft="24dp"
+                android:text="@string/settings_title"
+                android:textColor="@color/searchBarFocused"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <LinearLayout
+            android:id="@+id/list"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginTop="8dp"
             android:orientation="vertical">
 
-            <FrameLayout
-                android:id="@+id/setting_item"
+            <LinearLayout
+                android:id="@+id/clear"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp">
+                android:orientation="vertical">
 
-                <LinearLayout
-                    android:id="@+id/setting_item_layout"
+                <Button
+                    android:id="@+id/clear_data"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:background="@drawable/search_frame"
-                    android:orientation="horizontal"
-                    android:paddingLeft="24dp"
-                    android:paddingTop="16dp"
-                    android:paddingRight="24dp"
-                    android:paddingBottom="16dp">
+                    android:layout_height="wrap_content"
+                    android:text="@string/clear_data" />
 
-                    <Switch
-                        android:id="@+id/switch1"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:text="Switch" />
-                </LinearLayout>
-            </FrameLayout>
+                <TextView
+                    android:id="@+id/textView"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:paddingTop="4dp"
+                    android:paddingBottom="4dp"
+                    android:text="@string/clear_explanation"
+                    android:textAlignment="center"
+                    android:textColor="@color/itemActionPressed"
+                    android:textSize="12sp"
+                    android:textStyle="italic" />
+            </LinearLayout>
+
         </LinearLayout>
     </LinearLayout>
+
+    <com.kinghorn.justtasks.BusySpinner
+        android:id="@+id/busy"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>

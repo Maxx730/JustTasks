@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/modal_shade"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -81,34 +82,37 @@
                     <LinearLayout
                         android:id="@+id/modal_actions"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_gravity="end"
-                        android:background="@drawable/confirm_delete_divider"
-                        android:gravity="end"
+                        android:layout_height="match_parent"
+                        android:layout_weight="1"
                         android:orientation="horizontal"
-                        android:padding="8dp">
+                        android:padding="8sp">
 
-                        <ImageButton
-                            android:id="@+id/action_cancel"
+                        <Button
+                            android:id="@+id/modal_cancel"
+                            style="@android:style/Widget.DeviceDefault.Button.Borderless"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
+                            android:layout_marginRight="4dp"
                             android:layout_weight="1"
                             android:background="@drawable/modal_action_left"
-                            android:paddingTop="12dp"
-                            android:paddingBottom="12dp"
-                            android:src="@drawable/x" />
+                            android:text="@string/cancel"
+                            android:textColor="#FF9999"
+                            app:backgroundTint="#3a1e1e" />
 
-                        <ImageButton
-                            android:id="@+id/action_confirm"
+                        <Button
+                            android:id="@+id/modal_confirm"
+                            style="@android:style/Widget.DeviceDefault.Button.Borderless"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginLeft="4dp"
                             android:layout_weight="1"
                             android:background="@drawable/modal_action_right"
-                            android:paddingTop="12dp"
-                            android:paddingBottom="12dp"
-                            android:src="@drawable/check" />
+                            android:elevation="0dp"
+                            android:text="@string/confirm"
+                            android:textColor="#8cb15b"
+                            app:backgroundTint="#2e3a1e" />
                     </LinearLayout>
+
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>

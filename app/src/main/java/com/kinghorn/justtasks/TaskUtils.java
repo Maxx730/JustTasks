@@ -6,6 +6,8 @@ import android.util.TypedValue;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Iterator;
 
 public class TaskUtils {
@@ -53,5 +55,13 @@ public class TaskUtils {
         }
 
         return _has_changes;
+    }
+
+    public static String FormatDate(long date) {
+        SimpleDateFormat _format = new SimpleDateFormat("MMMM, d, yyyy");
+        Date _date = new Date(date);
+        String[] _parts = _format.format(_date).split(",");
+
+        return _parts[0] + " " + _parts[1].trim() + TaskUtils.GetDateSuffix(Integer.valueOf(_parts[1].trim())) + ", " + _parts[2];
     }
 }

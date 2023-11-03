@@ -47,6 +47,7 @@
                     android:layout_marginRight="16dp"
                     android:ellipsize="end"
                     android:singleLine="true"
+                    android:textColor="@color/offWhite"
                     tools:text="Task Title" />
 
                 <TextView
@@ -55,6 +56,7 @@
                     android:layout_height="wrap_content"
                     android:fontFamily="sans-serif"
                     android:text="Date"
+                    android:textColor="@color/offWhite"
                     android:textSize="10sp"
                     android:textStyle="italic" />
             </LinearLayout>
@@ -79,15 +81,6 @@
                     android:src="@drawable/trash_2"
                     android:visibility="invisible" />
 
-                <ImageButton
-                    android:id="@+id/task_details"
-                    android:layout_width="48dp"
-                    android:layout_height="match_parent"
-                    android:layout_weight="1"
-                    android:background="@drawable/task_item_action_button"
-                    android:scaleType="centerInside"
-                    android:src="@drawable/chevron_down"
-                    android:visibility="visible" />
             </LinearLayout>
 
         </LinearLayout>

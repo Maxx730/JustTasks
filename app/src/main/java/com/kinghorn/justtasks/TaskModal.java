@@ -4,16 +4,15 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageButton;
+import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.TextView;
 
-import androidx.constraintlayout.widget.ConstraintLayout;
 
 public class TaskModal {
     private Context ModalContext;
     private ViewGroup RootView;
-    private ConstraintLayout ModalLayout;
-    private ImageButton ModalCancel, ModalConfirm;
+    private View ModalLayout;
     public TaskModal(Context context, ViewGroup root) {
         this.ModalContext = context;
         this.RootView = root;
@@ -21,12 +20,12 @@ public class TaskModal {
 
     public void show(String title, String description, ModalInterface inter) {
         LayoutInflater _inflate = (LayoutInflater) ModalContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-        ModalLayout = (ConstraintLayout) _inflate.inflate(R.layout.modal_layout, (ViewGroup) RootView, true);
+        ModalLayout = (View) _inflate.inflate(R.layout.modal_layout, (ViewGroup) RootView, true);
 
         TextView _title = (TextView) ModalLayout.findViewById(R.id.modal_title);
         TextView _description = (TextView) ModalLayout.findViewById(R.id.modal_message);
-        ImageButton _cancel = (ImageButton) ModalLayout.findViewById(R.id.action_cancel);
-        ImageButton _confirm = (ImageButton) ModalLayout.findViewById(R.id.action_confirm);
+        Button _cancel = (Button) ModalLayout.findViewById(R.id.modal_cancel);
+        Button _confirm = (Button) ModalLayout.findViewById(R.id.modal_confirm);
 
         _title.setText(title);
         _description.setText(description);
