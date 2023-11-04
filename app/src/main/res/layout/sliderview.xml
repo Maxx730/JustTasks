@@ -113,7 +113,7 @@
                 android:id="@+id/click_mask"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:background="@drawable/app_widget_inner_view_background">
+                android:clickable="true">
 
             </FrameLayout>
 

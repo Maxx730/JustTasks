@@ -91,6 +91,7 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
             _cancel.setOnClickListener(this);
             LinearLayout.LayoutParams _params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
             DetView.setLayoutParams(_params);
+            DetView.UpdateDetails(_task, this);
 
             Button _close = (Button) DetView.findViewById(R.id.close_details);
             _close.setOnClickListener(this);
@@ -107,16 +108,6 @@ public class MainActivity extends AppCompatActivity implements StorageInterface,
                     }
                 }
             });
-
-            Date _d = new Date(_task.getString("date"));
-
-            TextView _title = (TextView) DetView.findViewById(R.id.details_title);
-            TextView _desc = (TextView) DetView.findViewById(R.id.details_description);
-            TextView _date = (TextView) DetView.findViewById(R.id.details_date);
-
-            _title.setText(_task.getString("title"));
-            _desc.setText(_task.getString("description"));
-            _date.setText(TaskUtils.FormatDate(_d.getTime()));
 
             SlideView.open(this, DetView);
         } catch (JSONException e) {

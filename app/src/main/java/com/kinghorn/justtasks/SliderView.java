@@ -91,6 +91,8 @@ public class SliderView extends LinearLayout implements View.OnClickListener, Va
         requestLayout();
 
         LinearLayout _modal = (LinearLayout) findViewById(R.id.SliderTop);
+        FrameLayout _mask = (FrameLayout) findViewById(R.id.click_mask);
+        _mask.setVisibility(View.VISIBLE);
         _modal.removeAllViews();
         _modal.addView(modalView);
 
@@ -106,6 +108,9 @@ public class SliderView extends LinearLayout implements View.OnClickListener, Va
         isOpen = false;
         invalidate();
         requestLayout();
+
+        FrameLayout _mask = (FrameLayout) findViewById(R.id.click_mask);
+        _mask.setVisibility(View.GONE);
 
         ValueAnimator _anim = ValueAnimator.ofInt(TaskUtils.ConvertDPtoPixel(MODAL_SIZE, getContext()), 0);
         _anim.addUpdateListener(this);

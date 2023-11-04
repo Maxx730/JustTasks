@@ -45,6 +45,14 @@
                         android:textColor="@color/offWhite"
                         android:textSize="16sp" />
 
+                    <EditText
+                        android:id="@+id/editTextText"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ems="10"
+                        android:inputType="text"
+                        android:text="Name" />
+
                     <TextView
                         android:id="@+id/details_date"
                         android:layout_width="match_parent"
